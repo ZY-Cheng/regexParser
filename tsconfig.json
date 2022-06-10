@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.js",
+    "**/__test__/**/*.js",
+    "**/__test__/**/*.ts",
+    "types"
+  ],
+}

@@ -1,0 +1,17 @@
+export const rules = {
+  metaEscape: /\\[dDwWsStrnvfb]/,
+  specEscape: /\\[dDwWsStrnvfbB]/,
+  digit: /[0-9]/,
+  nonDigit: /[^0-9]/,
+  nonZeroDigit: /[1-9]/,
+  letter: /[a-zA-Z]/,
+  nonLetter: /[^a-zA-Z]/,
+  twoHexDigit: /[0-9A-Fa-f]{2}/,
+  unicode: /\\u[0-9A-Fa-f]{4}/,
+  unicodeInUnicodeFlag: /\\u{[0-9A-Fa-f]{1,5}}/,
+  quantifierRange: /{\d+,*\d*}/,
+  flag: /[gimsuy]/,
+  octal3Digit: /[0-3][0-7]{2}/,
+  octal2Digit: /[0-7]{2}/,
+  octalDigit: /[0-7]/,
+};
