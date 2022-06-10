@@ -7,8 +7,9 @@ describe('Lexer', () => {
   test(`${reg1} test`, () => {
     const lexer = new Lexer();
 
+    lexer.init(reg1);
     lexer.pushState(States.UNICODE);
-    lexer.scan(reg1);
+    lexer.scan();
     expect(lexer.tokens).toBeInstanceOf(Array);
     console.info(lexer.tokens, lexer.getStates());
   });

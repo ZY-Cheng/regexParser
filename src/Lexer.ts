@@ -64,8 +64,7 @@ export class Lexer {
     };
   }
 
-  scan(text: string): Token[] {
-    this.init(text);
+  scan(): Token[] {
     while (this.hasMoreText()) {
       this.tokenize();
     }
