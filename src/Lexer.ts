@@ -6,6 +6,7 @@ import {
   error, INVALID_FLAG_ERROR, INVALID_GROUP_ERROR, INVALID_UNICODE_ESCAPE_ERROR,
 } from './error';
 import { rules } from './rules';
+import { isHighSurrogate, isLowSurrogate } from './utils';
 
 function createToken(type:TokenTypes, value: TokenInfo): Token {
   return {
@@ -161,6 +162,17 @@ export class Lexer {
           this.forward += 3;
           newLexeme = this.next();
           if (newLexeme.match(rules.unicode)) {
+            if (isHighSurrogate(newLexeme)) {
+              lexeme = newLexeme;
+              this.forward += 6;
+              newLexeme = this.next();
+              if (!isLowSurrogate(newLexeme)) {
+                error({
+                  line: this.position.start.line,
+                  column: this.position.start.column + lexeme.length + 1,
+                }, newLexeme, INVALID_UNICODE_ESCAPE_ERROR);
+              }
+            }
             this.match(TokenTypes.UNICODE_ESCAPE, newLexeme);
           } else {
             this.forward = 1;
@@ -294,6 +306,10 @@ export class Lexer {
         }, lexeme, INVALID_FLAG_ERROR);
       }
     } else {
+      if (isHighSurrogate(lexeme)) {
+        this.forward += 1;
+        lexeme = this.next();
+      }
       this.match(TokenTypes.CHARACTER, lexeme);
     }
   }
