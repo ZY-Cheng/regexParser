@@ -3,9 +3,10 @@ import { Lexer } from '../Lexer';
 
 describe('Lexer', () => {
   // const reg1 = '/😊22\\477\\000\\009\\00\\023\\02\\23a^[axsf]{1e,}(12312)\\ca\\n\\t\\u{e1}$/gus';
-  const reg1 = '/😊/gus';
+  // const reg1 = '/😊/gus';
   // const reg1 = '/\\uD83D\\u0000/gus';
-  // const reg1 = '/휀/gus';
+  // const reg1 = '/\\u{1234}/gus';
+  const reg1 = '/\\p{1234}/gus';
 
   test(`${reg1} test`, () => {
     const lexer = new Lexer();

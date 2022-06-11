@@ -180,8 +180,12 @@ export class Lexer {
             this.match(TokenTypes.ESCAPE, lexeme);
           }
         }
-      } else if (escapeSpec.toLowerCase() === 'p') {
-        // TODO
+      } else if (escapeSpec.toLowerCase() === 'p' && this.isUnicodeMode) {
+        while (lexeme.slice(-1) !== '}') {
+          this.forward += 1;
+          lexeme = this.next();
+        }
+        this.match(TokenTypes.UNICODE_PROPERTY_ESCAPE, lexeme);
       } else {
         this.match(TokenTypes.ESCAPE, newLexeme);
       }

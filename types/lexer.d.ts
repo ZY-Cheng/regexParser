@@ -11,12 +11,13 @@ declare module 'Lexer' {
     OCTAL_ESCAPE,
     CONTROL_ESCAPE, // \c[A-Za-z]
     UNICODE_ESCAPE, // \uhhhh \u{hhhh} \u{hhhhh}
+    UNICODE_PROPERTY_ESCAPE, // \p{...}
     ALTERNATION, // |
-    CHARACTER,
     STAR, // *
     PLUS, // +
     MARK, // ?
     HEX_ESCAPE, // \xhh
+    CHARACTER,
     LEFT_BRACE, // {
     QUANTIFIER_RANGE_NUMBER, // [0-9]
     COMMA, // ,
