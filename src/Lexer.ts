@@ -167,10 +167,8 @@ export class Lexer {
               this.forward += 6;
               newLexeme = this.next();
               if (!isLowSurrogate(newLexeme)) {
-                error({
-                  line: this.position.start.line,
-                  column: this.position.start.column + lexeme.length + 1,
-                }, newLexeme, INVALID_UNICODE_ESCAPE_ERROR);
+                this.forward -= 6;
+                newLexeme = this.next();
               }
             }
             this.match(TokenTypes.UNICODE_ESCAPE, newLexeme);
@@ -319,7 +317,7 @@ export class Lexer {
   }
 
   hasMoreToken(): boolean {
-    return this.cursor < this.tokens.length;
+    return this.cursor < this.tokens.length - 1;
   }
 
   getNextToken(isConsume = true) {
@@ -336,6 +334,7 @@ export class Lexer {
     this.lexemeBegin = -1;
     this.forward = 0;
     this.tokens = [];
+    this.states = [];
   }
 
   pushState(state: States) {
