@@ -185,6 +185,10 @@ export class Lexer {
         }
         this.match(TokenTypes.UNICODE_PROPERTY_ESCAPE, lexeme);
       } else {
+        if (isHighSurrogate(escapeSpec)) {
+          this.forward += 1;
+          newLexeme = this.next();
+        }
         this.match(TokenTypes.ESCAPE, newLexeme);
       }
     } else if (lexeme === '$' && !this.isInCharacterClass) {
