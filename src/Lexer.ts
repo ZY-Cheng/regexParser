@@ -3,7 +3,12 @@ import {
   Position, States, Token, TokenInfo, TokenTypes,
 } from 'Lexer';
 import {
-  error, INVALID_FLAG_ERROR, INVALID_GROUP_ERROR, INVALID_UNICODE_ESCAPE_ERROR,
+  DUPLICATE_CAPTURE_GROUP_NAME_ERROR,
+  error,
+  INVALID_FLAG_ERROR,
+  INVALID_GROUP_ERROR,
+  INVALID_UNICODE_ESCAPE_ERROR,
+  INVALID_UNICODE_PROPERTY_NAME_ERROR,
 } from './error';
 import { rules } from './rules';
 import { isHighSurrogate, isLowSurrogate } from './utils';
@@ -17,6 +22,10 @@ function createToken(type:TokenTypes, value: TokenInfo): Token {
 
 export class Lexer {
   tokens: Token[] = [];
+
+  namedGroups = {};
+
+  capturingGroupsCount = 0;
 
   private text: string;
 
@@ -101,30 +110,15 @@ export class Lexer {
       this.forward += 1;
       let newLexeme = this.next();
       const escapeSpec = newLexeme.slice(-1);
-      if (escapeSpec.match(rules.octalDigit)) {
-        lexeme = newLexeme;
-        this.forward += 2;
-        newLexeme = this.next();
-        if (newLexeme.match(rules.octal3Digit)) {
-          this.match(TokenTypes.OCTAL_ESCAPE, newLexeme);
-        } else {
-          this.forward -= 1;
-          lexeme = this.next();
-          if (lexeme.match(rules.octal2Digit)) {
-            this.match(TokenTypes.OCTAL_ESCAPE, lexeme);
-          } else {
-            this.forward -= 1;
-            lexeme = this.next();
-            this.match(TokenTypes.ESCAPE, lexeme);
-          }
-        }
+      if (escapeSpec.match(rules.digit)) {
+        this.match(TokenTypes.NUMBER_ESCAPE, newLexeme);
       } else if (escapeSpec === 'c') {
         this.forward += 1;
         newLexeme = this.next();
         if (newLexeme.slice(-1).match(rules.letter)) {
           this.match(TokenTypes.CONTROL_ESCAPE, newLexeme);
         } else {
-          error({
+          throw error({
             line: this.position.start.line,
             column: this.position.start.column + newLexeme.length,
           }, newLexeme, INVALID_UNICODE_ESCAPE_ERROR);
@@ -144,7 +138,7 @@ export class Lexer {
         this.forward += 1;
         newLexeme = this.next();
         if (newLexeme === '\\u{' && this.isUnicodeMode) {
-          let unicodeLexeme:string;
+          let unicodeLexeme = '';
           while (this.next().slice(-1) !== '}' && this.hasMoreText()) {
             this.forward += 1;
             unicodeLexeme = this.next();
@@ -152,7 +146,7 @@ export class Lexer {
           if (unicodeLexeme.match(rules.unicodeInUnicodeFlag)) {
             this.match(TokenTypes.UNICODE_ESCAPE, unicodeLexeme);
           } else {
-            error({
+            throw error({
               line: this.position.start.line,
               column: this.position.start.column + newLexeme.length,
             }, unicodeLexeme, INVALID_UNICODE_ESCAPE_ERROR);
@@ -183,6 +177,12 @@ export class Lexer {
           this.forward += 1;
           lexeme = this.next();
         }
+        if (!lexeme.match(rules.unicodeProperty)) {
+          throw error({
+            line: this.position.start.line,
+            column: this.position.start.column,
+          }, lexeme, INVALID_UNICODE_PROPERTY_NAME_ERROR);
+        }
         this.match(TokenTypes.UNICODE_PROPERTY_ESCAPE, lexeme);
       } else {
         if (isHighSurrogate(escapeSpec)) {
@@ -204,7 +204,7 @@ export class Lexer {
     } else if (lexeme === '?' && !this.isInCharacterClass) {
       this.match(TokenTypes.MARK, lexeme);
     } else if (lexeme === '{' && !this.isInCharacterClass) {
-      let braceStr: string;
+      let braceStr = '';
       while (this.next().slice(-1) !== '}' && this.hasMoreText()) {
         this.forward += 1;
         braceStr = this.next();
@@ -226,15 +226,7 @@ export class Lexer {
       this.forward -= 1;
       this.match(TokenTypes.QUANTIFIER_RANGE_NUMBER, lexeme);
     } else if (lexeme === ',' && this.isInQuantifierRange) {
-      this.forward += 1;
-      const newLexeme = this.next();
-      if (newLexeme === ',}') {
-        this.match(TokenTypes.QUANTIFIER_RANGE_OPEN, newLexeme);
-        this.popState();
-      } else {
-        this.forward -= 1;
-        this.match(TokenTypes.COMMA, lexeme);
-      }
+      this.match(TokenTypes.COMMA, lexeme);
     } else if (lexeme === '}' && this.isInQuantifierRange) {
       this.match(TokenTypes.RIGHT_BRACE, lexeme);
       this.popState();
@@ -266,6 +258,7 @@ export class Lexer {
             this.forward -= 1;
             this.pushState(States.NAMED_CAPTURING_GROUP);
             this.match(TokenTypes.NAMED_CAPTURING_GROUP_START, lexeme);
+            this.capturingGroupsCount++;
           }
         } else if (newLexeme === '(?=') {
           lexeme = newLexeme;
@@ -278,7 +271,7 @@ export class Lexer {
             this.match(TokenTypes.LOOKAHEAD_START, lexeme);
           }
         } else {
-          error({
+          throw error({
             line: this.position.start.line,
             column: this.position.start.column + lexeme.length + 1,
           }, lexeme, INVALID_GROUP_ERROR);
@@ -286,6 +279,7 @@ export class Lexer {
       } else {
         this.forward -= 1;
         this.match(TokenTypes.LEFT_PARENTHESIS, lexeme);
+        this.capturingGroupsCount++;
       }
     } else if (lexeme !== '>' && this.isInNamedCapturingGroup) {
       // TODO: Identifier logic
@@ -295,6 +289,13 @@ export class Lexer {
       }
       this.forward -= 1;
       this.match(TokenTypes.GROUP_NAME, lexeme);
+      if (this.namedGroups[lexeme]) {
+        throw error({
+          line: this.position.start.line,
+          column: this.position.start.column + lexeme.length + 1,
+        }, DUPLICATE_CAPTURE_GROUP_NAME_ERROR, lexeme);
+      }
+      this.namedGroups[lexeme] = this.capturingGroupsCount;
     } else if (lexeme === '>' && this.isInNamedCapturingGroup) {
       this.match(TokenTypes.RIGHT_ANGLE_BRACKET, lexeme);
       this.popState();
@@ -306,13 +307,13 @@ export class Lexer {
       if (lexeme.match(rules.flag)) {
         this.match(TokenTypes.FLAG, lexeme);
       } else {
-        error({
+        throw error({
           line: this.position.start.line,
           column: this.position.start.column + 1,
         }, lexeme, INVALID_FLAG_ERROR);
       }
     } else {
-      if (isHighSurrogate(lexeme)) {
+      if (!this.isInCharacterClass && isHighSurrogate(lexeme)) {
         this.forward += 1;
         lexeme = this.next();
       }
@@ -324,12 +325,16 @@ export class Lexer {
     return this.cursor < this.tokens.length - 1;
   }
 
-  getNextToken(isConsume = true) {
+  getNextToken(isConsume = true): Token | undefined {
     if (isConsume) {
       this.cursor += 1;
       return this.tokens[this.cursor];
     }
     return this.tokens[this.cursor + 1];
+  }
+
+  getCursor() {
+    return this.cursor;
   }
 
   init(text: string) {
@@ -339,6 +344,8 @@ export class Lexer {
     this.forward = 0;
     this.tokens = [];
     this.states = [];
+    this.capturingGroupsCount = 0;
+    this.namedGroups = {};
   }
 
   pushState(state: States) {
@@ -363,13 +370,14 @@ export class Lexer {
   }
 
   private match(type:TokenTypes, lexeme: string, info: Omit<TokenInfo, 'position' | 'raw'> = {}) {
+    this.lexemeBegin += 1;
     const token = createToken(type, {
       position: this.position,
       raw: lexeme,
       ...info,
     });
     this.tokens.push(token);
-    this.lexemeBegin += (this.forward + 1);
+    this.lexemeBegin += this.forward;
     this.forward = 0;
   }
 
