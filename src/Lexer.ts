@@ -156,15 +156,6 @@ export class Lexer {
           this.forward += 3;
           newLexeme = this.next();
           if (newLexeme.match(rules.unicode)) {
-            if (isHighSurrogate(newLexeme)) {
-              lexeme = newLexeme;
-              this.forward += 6;
-              newLexeme = this.next();
-              if (!isLowSurrogate(newLexeme)) {
-                this.forward -= 6;
-                newLexeme = this.next();
-              }
-            }
             this.match(TokenTypes.UNICODE_ESCAPE, newLexeme);
           } else {
             this.forward = 1;
