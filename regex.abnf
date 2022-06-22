@@ -59,40 +59,50 @@ unicode-flag              = %x75   ; u
 sticky-flag               = %x79   ; y
 
 ; Pattern
-pattern                                     = sequence 0*(alternation [sequence])
-                                            / alternation [sequence]
-alternation                                 = "|"
+pattern                                     = disjunction
+; Disjunction
+disjunction                                 = alternative ["|" disjunction]
+; Alternative
+alternative                                 = ""
+                                            / alternative term
 
-sequence                                    = factor [assertion] [sequence]
-                                            / repetition [sequence]
+; Term
+term                                        = assertion
+                                            / atom
+                                            / atom quantifier
 
-; Repetition
-repetition                                  = factor quantifier
+; Assertion
+assertion                                   = wordBoundary 
+                                            / nonWordBoundary 
+                                            / anchor
+; Anchor
+anchor                                      =  "^" / "$"
+; Word Boundary
+wordBoundary                                =  "\" %x62 ; \b 
+nonWordBoundary                             =  "\" %x42 ; \B 
+; Lookaround
+lookaround  = lookahead / lookbehind
+lookahead   = "(?" ["=" / "!"] disjunction ")"
+lookbehind  = "(?<" ["=" / "!"] disjunction ")"
 
 ; Quantifier
 quantifier = "*" / "+" / "?" / "{" DIGIT ["," [DIGIT]] "}" ["?"]
 
-
-factor                                      = anyUnicodeCharExceptFactorSpecialChar 
+; Atom
+atom                                        = "."
+                                            / patternCharacter ; [^^$\.*+?()[]{}|]
                                             / escape 
                                             / class 
                                             / group 
-                                            / lookaround
                                             / backReference
-anyUnicodeCharExceptFactorSpecialChar       = commonUnicodeChar 
-                                            / [anyCharExceptLineTerminators-character / anyChar-character] 
-; commonUnicodeChar ; [^/\[]{}+*|.\^$]
-anyCharExceptLineTerminators-character      = "."
-anyChar-character                           = "."  ; when "dotAll" flag
 
 ; Character class
-class                                       = "[" ["^"] 0*(anyUnicodeCharExceptClassSpecialChar / class-escape / range) "]"
-; anyUnicodeCharExceptClassSpecialChar ; [^/\[]-]
+class                                       = "[" ["^"] 0*(classAtom / class-escape / classRange) "]"
 ; class-escape
 class-escape                                = escape / backspaceChar-class-escape 
 backspaceChar-class-escape                  = "\" %x62  ; \b when inside a character class
-; Range
-range                                       = unicodeChar "-" unicodeChar ; left UnicodeChar code point <= right UnicodeChar code point
+; Class range
+classRange                                  = unicodeChar "-" unicodeChar ; left UnicodeChar code point <= right UnicodeChar code point
 
 ; Escape
 escape                                      = literal-escape
@@ -133,33 +143,15 @@ octalChar-escape                            = "\" ["0"] %x30-37 %x30-37 ; 0-77
 UTF16Char-escape                            = "\" %x75 4HEXDIG ; \uhhhh h=[0-9A-Fa-f]
 unicodeChar-escape                          = "\" %x75 "{" 4*5HEXDIG "}" ; \u{hhhh} or \u{hhhhh} h=[0-9A-Fa-f] when "unicode" flag
 literal-escape                              = "\" anyUnicodeCharExceptEscapeSpecialChar 
-; anyUnicodeCharExceptEscapeSpecialChar ; [^dDwWsStrnvfb0]
 
 ; Unicode property escape
 unicodePropertyChar-escape                  = "\" %x70 "{" UnicodePropertyBody "}" ; \p{UnicodeProperty} when "unicode" flag
 anyCharExceptUnicodePropertyChar-escape     = "\" %x50 "{" UnicodePropertyBody "}" ; \P{UnicodeProperty} when "unicode" flag
 UnicodePropertyBody                         = UnicodePropertyName "=" UnicodePropertyValue / UnicodeBinaryPropertyName
 
-
-; Assertion
-assertion                                   = wordBoundary 
-                                            / nonWordBoundary 
-                                            / anchor
-; Anchor
-anchor                                      =  endInput-anchor / beginInput-anchor
-beginInput-anchor                           = "^"
-endInput-anchor                             = "$"
-; Word Boundary
-wordBoundary                                =  "\" %x62 ; \b 
-nonWordBoundary                             =  "\" %x42 ; \B 
-; Lookaround
-lookaround  = lookahead / lookbehind
-lookahead   = "(?" ["=" / "!"] pattern ")"
-lookbehind  = "(?<" ["=" / "!"] pattern ")"
-
 ; Group
-group               = "(" ["?:"] pattern ")" 
-                    / "(?<" 1*letter ">"  pattern ")"
+group               = "(" ["?:"] disjunction ")" 
+                    / "(?<" 1*letter ">"  disjunction ")"
 
 ; BackReference
 backReference = "\" nonZeroDigit ; \n when the corresponding capturing group exsists

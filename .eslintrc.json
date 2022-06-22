@@ -24,8 +24,12 @@
     "jest-formatting"
   ],
   "rules": {
+    "no-param-reassign": 0,
+    "no-plusplus": 0,
     "import/prefer-default-export": 0,
     "import/no-cycle": 1,
-    "class-methods-use-this": 1
+    "consistent-return": 1,
+    "class-methods-use-this": 1,
+    "@typescript-eslint/member-delimiter-style": "error"
   }
 }

@@ -57,10 +57,6 @@ export class Lexer {
     return this.states.includes(States.UNICODE);
   }
 
-  private get lexeme() {
-    return this.text.slice(this.lexemeBegin, this.lexemeBegin + this.forward + 1);
-  }
-
   private get position():Position {
     return {
       start: {
@@ -348,10 +344,6 @@ export class Lexer {
       return this.states.pop();
     }
     return undefined;
-  }
-
-  getStates() {
-    return this.states;
   }
 
   private next() {

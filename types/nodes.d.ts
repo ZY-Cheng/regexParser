@@ -6,88 +6,100 @@ declare module 'RegexParser' {
   interface Node {
     type: string;
     raw: string;
-    pos: Position
+    pos: Position;
   }
 
   interface RegexExpression extends Node {
     type: 'expression';
-    body: {
-      pattern: Pattern,
-      flags: Flags,
-    }
+    pattern: Pattern;
+    flags: Flags;
   }
 
-  interface Pattern extends Node {
-    type: 'pattern';
-    body: (Sequence)[]
+  type Pattern = Disjunction;
+  interface Disjunction extends Node {
+    type: 'disjunction';
+    body: (Alternative | null)[];
   }
 
-  interface Sequence extends Node {
-    type: 'sequence';
-    body: (Factor | Repetition | Assertion)[] | null
+  interface Alternative extends Node {
+    type: 'alternative';
+    body: Term[];
   }
 
   interface Repetition extends Node {
-    type: 'repetition',
-    body: { factor: Factor, quantifier: Quantifier }
+    type: 'repetition';
+    body: Atom;
+    quantifier: Quantifier;
   }
 
-  interface Factor extends Node {
-    type: 'factor';
-    body: (Character | Escape | CharacterClass | Group | BackReference)[]
+  type Term = Assertion | Atom | Repetition;
+
+  type Atom = Character | Escape | CharacterClass | Group | BackReference;
+
+  type BackReference = NameBackedReference | NumberBackedReference;
+
+  interface NameBackedReference extends Node {
+    type: 'backReference';
+    kind: 'name';
+    name: string;
   }
 
-  interface BackReference extends Node {
-    type: 'backReference'
-    key: string | number;
+  interface NumberBackedReference extends Node {
+    type: 'backReference';
+    kind: 'number';
+    n: number;
   }
 
   interface Character extends Node {
     type: 'character';
     kind: 'special' | 'literal';
+    char?: string;
   }
 
-  type Escape = SimpleEscape | UnicodePropertyEscape;
+  type Escape = CharacterEscape | UnicodePropertyEscape;
 
-  interface SimpleEscape extends Node {
+  interface CharacterEscape extends Node {
     type: 'escape';
-    kind: 'octal' | 'hex' | 'special' | 'literal' | 'utf16' | 'unicode';
+    kind: 'octal' | 'hex' | 'special' | 'literal' | 'unicode' | 'control';
     char: string;
   }
 
   interface UnicodePropertyEscape extends Node {
     type: 'escape';
     kind: 'unicodeProperty';
-    name: string;
-    value: string;
+    name?: string;
+    value?: string;
     negative: boolean;
-    fullName: string;
-    fullValue: string;
+    binary: boolean;
+    nameAlias?: string | string[];
+    valueAlias?: string | string[];
+    canonicalName: string;
+    canonicalValue?: string;
   }
 
-  type Group = CapturingGroup | NonCapturingGroup | NamedCaptureGroup;
+  type Group = CapturingGroup | NoneCapturingGroup | NamedCaptureGroup;
 
   interface CapturingGroup extends Node {
     type: 'group';
     capturing: true;
     n: number;
-    body: Pattern
+    body: Disjunction;
   }
 
-  interface NonCapturingGroup extends Node {
+  interface NoneCapturingGroup extends Node {
     type: 'group';
     capturing: false;
-    body: Pattern
+    body: Disjunction;
   }
 
   interface NamedCaptureGroup extends Node {
     type: 'group';
     n: number;
     name: string;
-    body: Pattern
+    body: Disjunction;
   }
 
-  type Assertion = Anchor | WordBoundary;
+  type Assertion = Anchor | WordBoundary | Lookaround;
 
   interface Anchor extends Node {
     type: 'assertion';
@@ -104,19 +116,21 @@ declare module 'RegexParser' {
     type: 'assertion';
     kind: 'lookbehind' | 'lookahead';
     negative: boolean;
-    body: Pattern
+    body: Disjunction;
   }
 
+  type CharacterClassBodyItem = Character | Escape | ClassRange;
   interface CharacterClass extends Node {
     type: 'characterClass';
-    not: boolean;
-    body: (Character | Escape | Range)[]
+    negative: boolean;
+    body: CharacterClassBodyItem[];
   }
 
-  interface Range extends Node {
-    type: 'range';
-    from: Character
-    to: Character
+  type ClassRangeBody = Character | CharacterEscape;
+  interface ClassRange extends Node {
+    type: 'classRange';
+    from: Required<ClassRangeBody>;
+    to: Required<ClassRangeBody>;
   }
 
   interface Quantifier extends Node {
@@ -127,18 +141,15 @@ declare module 'RegexParser' {
     to: number;
   }
 
-  interface Flags extends Node {
+  interface Flags extends Omit<Node, 'pos'> {
     type: 'flags';
-    body: Flag[];
+    body: string;
     global: boolean;
     ignoreCase: boolean;
     multiline: boolean;
     dotAll: boolean;
     unicode: boolean;
-    sticky: boolean
-  }
-
-  interface Flag extends Node {
-    type: 'flag';
+    sticky: boolean;
+    pos?: Position;
   }
 }

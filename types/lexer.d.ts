@@ -1,40 +1,74 @@
 declare module 'Lexer' {
   const enum TokenTypes {
-    SLASH, // /
-    BEGIN_OF_INPUT, // ^
-    END_OF_INPUT, // $
-    ANY_CHARACTER, // .
-    LEFT_SQUARE_BRACKET, // [
-    NEGATIVE_CHARACTER_CLASS_START, // [^
-    RIGHT_SQUARE_BRACKET, // ]
+    /** @constant / */
+    SLASH,
+    /** @constant ^ */
+    BEGIN_OF_INPUT,
+    /** @constant \$ */
+    END_OF_INPUT,
+    /** @constant . */
+    ANY_CHARACTER,
+    /** @constant [ */
+    LEFT_SQUARE_BRACKET,
+    /** @constant [^ */
+    NEGATIVE_CHARACTER_CLASS_START,
+    /** @constant ] */
+    RIGHT_SQUARE_BRACKET,
+    /** @constant \\. */
     ESCAPE,
-    OCTAL_ESCAPE,
-    CONTROL_ESCAPE, // \c[A-Za-z]
-    UNICODE_ESCAPE, // \uhhhh \u{hhhh} \u{hhhhh}
-    UNICODE_PROPERTY_ESCAPE, // \p{...}
-    ALTERNATION, // |
-    STAR, // *
-    PLUS, // +
-    MARK, // ?
-    HEX_ESCAPE, // \xhh
+    /** @constant \\[1-9] */
+    NUMBER_ESCAPE,
+    /** @constant \c[A-Za-z] */
+    CONTROL_ESCAPE,
+    /** @constant \uhhhh \u{hhhh} \u{hhhhh} */
+    UNICODE_ESCAPE,
+    /** @constant \p{...} */
+    UNICODE_PROPERTY_ESCAPE,
+    /** @constant | */
+    ALTERNATION,
+    /** @constant * */
+    STAR,
+    /** @constant + */
+    PLUS,
+    /** @constant ? */
+    MARK,
+    /** @constant \xhh */
+    HEX_ESCAPE,
     CHARACTER,
-    LEFT_BRACE, // {
-    QUANTIFIER_RANGE_NUMBER, // [0-9]
-    COMMA, // ,
-    RIGHT_BRACE, // }
-    QUANTIFIER_RANGE_OPEN, // ,}
-    DASH, // -
-    LEFT_PARENTHESIS, // (
-    NON_CAPTURING_GROUP_START, // (?:
-    NAMED_CAPTURING_GROUP_START, // (?<
+    /** @constant \{ */
+    LEFT_BRACE,
+    /** @constant */
+    QUANTIFIER_RANGE_NUMBER,
+    /** @constant , */
+    COMMA,
+    /** @constant } */
+    RIGHT_BRACE,
+    /** @constant - */
+    DASH,
+    /** @constant ( */
+    LEFT_PARENTHESIS,
+    /** @constant (?: */
+    NON_CAPTURING_GROUP_START,
+    /** @constant (?< */
+    NAMED_CAPTURING_GROUP_START,
+    /** @constant */
     GROUP_NAME,
-    RIGHT_ANGLE_BRACKET, // >
-    LOOKAHEAD_START, // (?=
-    NEGATIVE_LOOKAHEAD_START, // (?=!
-    LOOKBEHIND_START, // (?<=
-    NEGATIVE_LOOKBEHIND_START, // (?<=!
-    RIGHT_PARENTHESIS, // )
-    FLAG, // [gimsuy]
+    /** @constant < */
+    LEFT_ANGLE_BRACKET,
+    /** @constant > */
+    RIGHT_ANGLE_BRACKET,
+    /** @constant (?= */
+    LOOKAHEAD_START,
+    /** @constant (?=! */
+    NEGATIVE_LOOKAHEAD_START,
+    /** @constant (?<= */
+    LOOKBEHIND_START,
+    /** @constant (?<=! */
+    NEGATIVE_LOOKBEHIND_START,
+    /** @constant ) */
+    RIGHT_PARENTHESIS,
+    /** @constant [gimsuy] */
+    FLAG,
   }
 
   interface Token {
@@ -46,11 +80,11 @@ declare module 'Lexer' {
     start: {
       line: number;
       column: number;
-    },
+    };
     end: {
       line: number;
       column: number;
-    }
+    };
   }
 
   interface TokenInfo {

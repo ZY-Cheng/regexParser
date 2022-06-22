@@ -1,4 +1,5 @@
 export const rules = {
+  unicodeProperty: /\\[pP]{([-a-zA-z]+)(?:=([-a-zA-z]+))?}/,
   metaEscape: /\\[dDwWsStrnvfb]/,
   specEscape: /\\[dDwWsStrnvfbB]/,
   digit: /[0-9]/,
@@ -7,8 +8,8 @@ export const rules = {
   letter: /[a-zA-Z]/,
   nonLetter: /[^a-zA-Z]/,
   twoHexDigit: /[0-9A-Fa-f]{2}/,
-  unicode: /\\u[0-9A-Fa-f]{4}/,
-  unicodeInUnicodeFlag: /\\u{[0-9A-Fa-f]{1,5}}/,
+  unicode: /\\u([0-9A-Fa-f]{4})/,
+  unicodeInUnicodeFlag: /\\u{([0-9A-Fa-f]{1,5})}/,
   quantifierRange: /{\d+,*\d*}/,
   flag: /[gimsuy]/,
   octal3Digit: /[0-3][0-7]{2}/,

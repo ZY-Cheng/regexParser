@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
+    "rootDir": "src",
     "target": "ES6",
+    "strictNullChecks": true,
+    "outDir": "dist",
+    "moduleResolution": "Node"
   },
   "include": [
-    "src/**/*.ts",
-    "src/**/*.js",
-    "**/__test__/**/*.js",
-    "**/__test__/**/*.ts",
-    "types"
-  ],
+    "src/**/*",
+    "types/**/*"
+  ], 
 }
