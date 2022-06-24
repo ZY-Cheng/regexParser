@@ -148,15 +148,14 @@ export class Parser {
   }
 
   private Disjunction(): RegexParser.Disjunction {
-    let node: RegexParser.Alternative;
+    let node: RegexParser.Alternative | null;
     let pos: Position;
     const alternatives: (RegexParser.Alternative | null)[] = [];
 
-    if (this.ifLookaheadIs([
-      TokenTypes.ALTERNATION,
-      TokenTypes.SLASH,
-      TokenTypes.RIGHT_PARENTHESIS,
-    ])) {
+    node = this.Alternative();
+    if (node) {
+      pos = createPosition(node.pos)!;
+    } else {
       const { position } = this.lookahead!.value;
       pos = {
         start: {
@@ -168,22 +167,17 @@ export class Parser {
           column: position.start.column,
         },
       };
-      alternatives.push(null);
-    } else {
-      node = this.Alternative();
-      pos = createPosition(node.pos)!;
-      alternatives.push(node);
     }
+    alternatives.push(node);
 
     while (this.ifLookaheadIs(TokenTypes.ALTERNATION)) {
       const token = this.consumeToken(TokenTypes.ALTERNATION);
-      if (this.ifLookaheadIs([TokenTypes.SLASH, TokenTypes.RIGHT_PARENTHESIS])) {
-        alternatives.push(null);
+      node = this.Alternative();
+      alternatives.push(node);
+      if (node === null) {
         pos.end.line = token.value.position.end.line;
         pos.end.column = token.value.position.end.column;
       } else {
-        node = this.Alternative();
-        alternatives.push(node);
         pos.end.line = node.pos.end.line;
         pos.end.column = node.pos.end.column;
       }
@@ -197,13 +191,19 @@ export class Parser {
     };
   }
 
-  private Alternative(): RegexParser.Alternative {
-    const terms: RegexParser.Term[] = [];
-    while (!this.ifLookaheadIs([
+  private Alternative(): RegexParser.Alternative | null {
+    const isTerminator = () => this.ifLookaheadIs([
       TokenTypes.SLASH,
       TokenTypes.RIGHT_PARENTHESIS,
       TokenTypes.ALTERNATION,
-    ])) {
+    ]);
+
+    if (isTerminator()) {
+      return null;
+    }
+
+    const terms: RegexParser.Term[] = [];
+    while (!isTerminator()) {
       terms.push(this.Term());
     }
     const pos = createPosition(terms[0].pos)!;
